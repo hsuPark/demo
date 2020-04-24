@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${APP_NAME}-service
+  name: app-service
   labels:
-    app: ${APP_NAME} 
+    app: app 
 spec:                               # Service object를 노출하기 위한 방식을 설정
-  type: NodePort
+  type: LoadBalancer
   selector:                         # Service object가 요청을 전달할 Pod을 찾기위한 검색어 
-    app: ${APP_NAME}                # app이름으로  Pod의 label이 같은 pod를 찾아 요청을 전달, 찾은 Pod이 여러개인 경우 load balancing 정책에 따라 하나의 Pod을 선택함.
+    app: app                # app이름으로  Pod의 label이 같은 pod를 찾아 요청을 전달, 찾은 Pod이 여러개인 경우 load balancing 정책에 따라 하나의 Pod을 선택함.
   ports:
   - name: http
     protocol: TCP
@@ -21,9 +21,9 @@ spec:                               # Service object를 노출하기 위한 방�
 apiVersion: apps/v1
 kind: Deployment
 metadata:                           # Deployment object 자신의 고유 정보
-  name: ${APP_NAME}                 # Deployment object에 대한 Unique-key
+  name: app                 # Deployment object에 대한 Unique-key
   labels:
-    app: ${APP_NAME} 
+    app: app 
 spec:
   replicas: 2                       # 초기 Pod의 개수를 설정
   revisionHistoryLimit: 2           # replicaset 이전버전 보관수
@@ -34,15 +34,15 @@ spec:
       maxUnavailable: 1             # rolling update 중 unavailable 상태인 Pod의 최대 개수를 설정 
   selector:                         # Deployment object가 관리해야할 Pod이 어떤 것인지 찾기 위해 selector 정보로 Pod의 label 정보를 비교하고 관리
     matchLabels:
-      app: ${APP_NAME}
+      app: app
   template:                         # Deployment object가 생성할 Pod 관련 설정 
     metadata:
       labels:
-        app: ${APP_NAME}
+        app: app
     spec:
       containers:
-      - name: ${APP_NAME}
-        image: ${IMAGE}
+      - name: app
+        image: app
         imagePullPolicy: Always     # Always download images, **IfNotPresent : Use cached images first     
         ports:
         - name: http
@@ -75,33 +75,17 @@ spec:
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: ${APP_NAME}-hpa             # HorizontalPodAutoscaler object 자신의 고유 정보를 입력
+  name: app-hpa             # HorizontalPodAutoscaler object 자신의 고유 정보를 입력
 spec:                               # HorizontalPodAutoscaler object가 수행하는 내용에 대한 설정   
   maxReplicas: 5                    # 업스케일 시 생성할 수 있는 Pod의 최대수   
   minReplicas: 2                    # 다운스케일 시 생성할 수 있는 Pod의 최소수   
   scaleTargetRef:                   # HorizontalPodAutoscaler object가 동작할 대상에 대한 설정   
     apiVersion: apps/v1          
     kind: Deployment                  
-    name: ${APP_NAME}
+    name: app
   metrics:
   - type: Resource
     resource:
       name: cpu
       targetAverageUtilization: 80
----
-
-## Ingress          
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ${APP_NAME}-ingress-dev
-  annotations:
-    kubernetes.io/ingress.global-static-ip-name: app-ip
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /*
-        backend:
-          serviceName: ${APP_NAME}-service
-          servicePort: http
+--
