@@ -88,4 +88,3 @@ spec:                               # HorizontalPodAutoscaler object가 수행�
     resource:
       name: cpu
       targetAverageUtilization: 80
---
